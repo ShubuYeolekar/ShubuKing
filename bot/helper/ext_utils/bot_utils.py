@@ -33,6 +33,10 @@ class MirrorStatus:
     STATUS_CHECKING = "CheckingUp...📝"
     STATUS_SEEDING = "Seeding...🌧"
 
+
+PROGRESS_MAX_SIZE = 100 // 8
+PROGRESS_INCOMPLETE = ['▏', '▎', '▍', '▌', '▋', '▊', '▉']
+
 SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 
 
@@ -100,16 +104,22 @@ def getAllDownload(req_status: str):
                     return dl
     return None
 
+
 def get_progress_bar_string(status):
     completed = status.processed_bytes() / 8
     total = status.size_raw() / 8
     p = 0 if total == 0 else round(completed * 100 / total)
     p = min(max(p, 0), 100)
     cFull = p // 8
-    p_str = '■' * cFull
-    p_str += '□' * (12 - cFull)
+    cPart = p % 8 - 1
+    p_str = '█' * cFull
+    if cPart >= 0:
+        p_str += PROGRESS_INCOMPLETE[cPart]
+    p_str += ' ' * (PROGRESS_MAX_SIZE - cFull)
     p_str = f"[{p_str}]"
     return p_str
+
+
 
 def get_readable_message():
     with download_dict_lock:
@@ -141,16 +151,22 @@ def get_readable_message():
                 try:
                     msg += f"\n<b>Seeders:</b> {download.aria_download().num_seeders}" \
                            f" | <b>Peers:</b> {download.aria_download().connections}"
+                    msg += f"\n<b>Engine:</b> <code>Aria2c v1.35.0</code>
                 except:
                     pass
                 try:
                     msg += f"\n<b>Seeders:</b> {download.torrent_info().num_seeds}" \
                            f" | <b>Leechers:</b> {download.torrent_info().num_leechs}"
+                    msg += f"\n<b>Engine:</b> <code>qBittorrent v4.4.2</code>"
                 except:
                     pass
+                msg += f"\n<b>Engine:</b> <code>Pyrogram v2.0.1</code>"
+                msg += f"\n<b>Downloaded By:</b> ️<code>{download.message.from_user.first_name}</code>️"
                 msg += f"\n<code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             elif download.status() == MirrorStatus.STATUS_SEEDING:
                 msg += f"\n<b>Size: </b>{download.size()}"
+                msg += f"\n<b>Engine:</b> <code>qBittorrent v4.4.2</code>"
+                msg += f"\n<b>Seeding By:</b> ️<code>{download.message.from_user.first_name}</code>️"
                 msg += f"\n<b>Speed: </b>{get_readable_file_size(download.torrent_info().upspeed)}/s"
                 msg += f" | <b>Uploaded: </b>{get_readable_file_size(download.torrent_info().uploaded)}"
                 msg += f"\n<b>Ratio: </b>{round(download.torrent_info().ratio, 3)}"
@@ -278,4 +294,3 @@ def get_content_type(link: str) -> str:
         except:
             content_type = None
     return content_type
-
