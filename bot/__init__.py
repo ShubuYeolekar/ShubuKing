@@ -411,15 +411,18 @@ try:
   APPDRIVE_EMAIL = getConfig('APPDRIVE_EMAIL')
   if len(APPDRIVE_EMAIL) == 0:
      raise KeyError
+except:
+    APPDRIVE_EMAIL = None
+    
+ 
+try:
      APPDRIVE_PASS = getConfig('APPDRIVE_PASS')
   if len(APPDRIVE_PASS) == 0:
      raise KeyError
-      
 except:
-    APPDRIVE_EMAIL = None
-    APPDRIVE_PASS = None
-    
-    
+      APPDRIVE_PASS = None
+
+
     
  try:
     TOKEN_PICKLE_URL = getConfig('TOKEN_PICKLE_URL')
