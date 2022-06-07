@@ -72,20 +72,6 @@ def sendRss(text: str, bot):
             LOGGER.error(str(e))
             return
 
-
-async def sendRss_pyro(text: str):
-    rss_session = Client(name='rss_session', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_STRING_SESSION, parse_mode=enums.ParseMode.HTML)
-    await rss_session.start()
-    try:
-        return await rss_session.send_message(RSS_CHAT_ID, text, disable_web_page_preview=True)
-    except FloodWait as e:
-        LOGGER.warning(str(e))
-        await asleep(e.value * 1.5)
-        return await sendRss(text)
-    except Exception as e:
-        LOGGER.error(str(e))
-        return
-
 def deleteMessage(bot, message: Message):
     try:
         bot.deleteMessage(chat_id=message.chat.id,
@@ -119,31 +105,83 @@ def delete_all_messages():
                 LOGGER.error(str(e))
 
 def update_all_messages():
+    total, used, free = shutil.disk_usage('.')
+    free = get_readable_file_size(free)
+    currentTime = get_readable_time(time.time() - botStartTime)
     msg, buttons = get_readable_message()
+    msg += f"<b>CPU:</b> <code>{psutil.cpu_percent()}%</code>" \
+           f" <b>RAM:</b> <code>{psutil.virtual_memory().percent}%</code>" \
+           f" <b>DISK:</b> <code>{psutil.disk_usage('/').percent}%</code>"
+    with download_dict_lock:
+        dlspeed_bytes = 0
+        uldl_bytes = 0
+        for download in list(download_dict.values()):
+            speedy = download.speed()
+            if download.status() == MirrorStatus.STATUS_DOWNLOADING:
+                if 'K' in speedy:
+                    dlspeed_bytes += float(speedy.split('K')[0]) * 1024
+                elif 'M' in speedy:
+                    dlspeed_bytes += float(speedy.split('M')[0]) * 1048576 
+            if download.status() == MirrorStatus.STATUS_UPLOADING:
+                if 'KB/s' in speedy:
+            	    uldl_bytes += float(speedy.split('K')[0]) * 1024
+                elif 'MB/s' in speedy:
+                    uldl_bytes += float(speedy.split('M')[0]) * 1048576
+        dlspeed = get_readable_file_size(dlspeed_bytes)
+        ulspeed = get_readable_file_size(uldl_bytes)
+        msg += f"\n<b>FREE:</b> <code>{free}</code> | <b>UPTIME:</b> <code>{currentTime}</code>\n<b>DL:</b> <code>{dlspeed}/s</code> 🔻 | <b>UL:</b> <code>{ulspeed}/s</code> 🔺\n"
     with status_reply_dict_lock:
         for chat_id in list(status_reply_dict.keys()):
             if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id].text:
-                if buttons == "":
-                    editMessage(msg, status_reply_dict[chat_id])
-                else:
-                    editMessage(msg, status_reply_dict[chat_id], buttons)
+                try:
+                    if buttons == "":
+                        editMessage(msg, status_reply_dict[chat_id])
+                    else:
+                        editMessage(msg, status_reply_dict[chat_id], buttons)
+                except Exception as e:
+                    LOGGER.error(str(e))
                 status_reply_dict[chat_id].text = msg
+
 
 def sendStatusMessage(msg, bot):
     if len(Interval) == 0:
         Interval.append(setInterval(DOWNLOAD_STATUS_UPDATE_INTERVAL, update_all_messages))
+    total, used, free = shutil.disk_usage('.')
+    free = get_readable_file_size(free)
+    currentTime = get_readable_time(time.time() - botStartTime)
     progress, buttons = get_readable_message()
+    progress += f"<b>CPU:</b> <code>{psutil.cpu_percent()}%</code>" \
+           f" <b>RAM:</b> <code>{psutil.virtual_memory().percent}%</code>" \
+           f" <b>DISK:</b> <code>{psutil.disk_usage('/').percent}%</code>"
+    with download_dict_lock:
+        dlspeed_bytes = 0
+        uldl_bytes = 0
+        for download in list(download_dict.values()):
+            speedy = download.speed()
+            if download.status() == MirrorStatus.STATUS_DOWNLOADING:
+                if 'K' in speedy:
+                    dlspeed_bytes += float(speedy.split('K')[0]) * 1024
+                elif 'M' in speedy:
+                    dlspeed_bytes += float(speedy.split('M')[0]) * 1048576 
+            if download.status() == MirrorStatus.STATUS_UPLOADING:
+                if 'KB/s' in speedy:
+            	    uldl_bytes += float(speedy.split('K')[0]) * 1024
+                elif 'MB/s' in speedy:
+                    uldl_bytes += float(speedy.split('M')[0]) * 1048576
+        dlspeed = get_readable_file_size(dlspeed_bytes)
+        ulspeed = get_readable_file_size(uldl_bytes)
+        progress += f"\n<b>FREE:</b> <code>{free}</code> | <b>UPTIME:</b> <code>{currentTime}</code>\n<b>DL:</b> <code>{dlspeed}/s</code> 🔻 | <b>UL:</b> <code>{ulspeed}/s</code> 🔺\n"
     with status_reply_dict_lock:
-        if msg.chat.id in list(status_reply_dict.keys()):
+        if msg.message.chat.id in list(status_reply_dict.keys()):
             try:
-                message = status_reply_dict[msg.chat.id]
+                message = status_reply_dict[msg.message.chat.id]
                 deleteMessage(bot, message)
-                del status_reply_dict[msg.chat.id]
+                del status_reply_dict[msg.message.chat.id]
             except Exception as e:
                 LOGGER.error(str(e))
-                del status_reply_dict[msg.chat.id]
+                del status_reply_dict[msg.message.chat.id]
         if buttons == "":
             message = sendMessage(progress, bot, msg)
         else:
             message = sendMarkup(progress, bot, msg, buttons)
-        status_reply_dict[msg.chat.id] = message
+        status_reply_dict[msg.message.chat.id] = message
