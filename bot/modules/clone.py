@@ -34,10 +34,12 @@ def _clone(message, bot, multi=0):
             tag = f"@{reply_to.from_user.username}"
         else:
             tag = reply_to.from_user.mention_html(reply_to.from_user.first_name)
+    is_appdrive = is_appdrive_link(link)
     is_gdtot = is_gdtot_link(link)
-    if is_gdtot:
+    if (is_appdrive or is_gdtot):
         try:
             msg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
+            appdict = appdrive(link)
             link = gdtot(link)
             deleteMessage(bot, msg)
         except DirectDownloadLinkException as e:
@@ -99,8 +101,10 @@ def _clone(message, bot, multi=0):
             LOGGER.info(f'Cloning Done: {name}')
         if is_gdtot:
             gd.deletefile(link)
+         if is_appdrive:
+            gd.deleteFile(link)
     else:
-        sendMessage('Send Gdrive or gdtot link along with command or by replying to the link by command', bot, message)
+        sendMessage('Send Gdrive AppDrive gdtot link along with command or by replying to the link by command', bot, message)
 
 @new_thread
 def cloneNode(update, context):
