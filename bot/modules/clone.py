@@ -38,74 +38,38 @@ def _clone(message, bot, multi=0):
     is_gdtot = is_gdtot_link(link)
     if (is_appdrive or is_gdtot):
         try:
-            msg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
-            appdict = appdrive(link)
-            link = gdtot(link)
-            deleteMessage(bot, msg)
-        except DirectDownloadLinkException as e:
-            deleteMessage(bot, msg)
-            return sendMessage(str(e), bot, message)
+            msg = sendMessage(f"<b>Processing:</b> <code>{link}</code>", context.bot, update)
+            LOGGER.info(f"Processing: {link}")
+            if is_appdrive:
+                appdict = appdrive(link)
+                link = appdict.get('gdrive_link')
+            if is_gdtot:
+                link = gdtot(link)
+            deleteMessage(context.bot, msg)
+        except ExceptionHandler as e:
+            deleteMessage(context.bot, msg)
+            LOGGER.error(e)
+            return sendMessage(str(e), context.bot, update)
     if is_gdrive_link(link):
+        msg = sendMessage(f"<b>Cloning:</b> <code>{link}</code>", context.bot, update)
+        LOGGER.info(f"Cloning: {link}")
+        status_class = CloneStatus()
         gd = GoogleDriveHelper()
-        res, size, name, files = gd.helper(link)
-        if res != "":
-            return sendMessage(res, bot, message)
-        if STOP_DUPLICATE:
-            LOGGER.info('Checking File/Folder if already in Drive...')
-            smsg, button = gd.drive_list(name, True, True)
-            if smsg:
-                msg3 = "File/Folder is already available in Drive.\nHere are the search results:"
-                return sendMarkup(msg3, bot, message, button)
-        if CLONE_LIMIT is not None:
-            LOGGER.info('Checking File/Folder Size...')
-            if size > CLONE_LIMIT * 1024**3:
-                msg2 = f'Failed, Clone limit is {CLONE_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(size)}.'
-                return sendMessage(msg2, bot, message)
-        if multi > 1:
-            sleep(4)
-            nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
-            nextmsg = sendMessage(args[0], bot, nextmsg)
-            nextmsg.from_user.id = message.from_user.id
-            multi -= 1
-            sleep(4)
-            Thread(target=_clone, args=(nextmsg, bot, multi)).start()
-        if files <= 20:
-            msg = sendMessage(f"Cloning: <code>{link}</code>", bot, message)
-            result, button = gd.clone(link)
-            deleteMessage(bot, msg)
-        else:
-            drive = GoogleDriveHelper(name)
-            gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
-            clone_status = CloneStatus(drive, size, message, gid)
-            with download_dict_lock:
-                download_dict[message.message_id] = clone_status
-            sendStatusMessage(message, bot)
-            result, button = drive.clone(link)
-            with download_dict_lock:
-                del download_dict[message.message_id]
-                count = len(download_dict)
-            try:
-                if count == 0:
-                    Interval[0].cancel()
-                    del Interval[0]
-                    delete_all_messages()
-                else:
-                    update_all_messages()
-            except IndexError:
-                pass
-        cc = f'\n\n<b>cc: </b>{tag}'
-        if button in ["cancelled", ""]:
-            sendMessage(f"{tag} {result}", bot, message)
-        else:
-            sendMarkup(result + cc, bot, message, button)
-            LOGGER.info(f'Cloning Done: {name}')
+        sendCloneStatus(link, msg, status_class, update, context)
+        result = gd.clone(link, status_class)
+        deleteMessage(context.bot, msg)
+        status_class.set_status(True)
+        sendMessage(result, context.bot, update)
         if is_gdtot:
-            gd.deletefile(link)
+            LOGGER.info(f"Deleting: {link}")
+            gd.deleteFile(link)
         if is_appdrive:
             if appdict.get('link_type') == 'login':
+                LOGGER.info(f"Deleting: {link}")
                 gd.deleteFile(link)
     else:
-        sendMessage('Send Gdrive AppDrive gdtot link along with command or by replying to the link by command', bot, message)
+        sendMessage("<b>Send a Drive / AppDrive / DriveApp / GDToT link along with command</b>", context.bot, update)
+        LOGGER.info("Cloning: None")
 
 @new_thread
 def cloneNode(update, context):
