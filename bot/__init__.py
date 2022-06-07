@@ -406,7 +406,6 @@ try:
         raise KeyError
 except:
     CRYPT = None
-
 try:
     APPDRIVE_EMAIL = get_config('APPDRIVE_EMAIL')
     APPDRIVE_PASS = get_config('APPDRIVE_PASS')
@@ -415,9 +414,7 @@ try:
 except KeyError:
     APPDRIVE_EMAIL = None
     APPDRIVE_PASS = None
-
-    
- try:
+try:
     TOKEN_PICKLE_URL = getConfig('TOKEN_PICKLE_URL')
     if len(TOKEN_PICKLE_URL) == 0:
         raise KeyError
