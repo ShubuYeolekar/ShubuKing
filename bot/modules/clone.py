@@ -101,8 +101,9 @@ def _clone(message, bot, multi=0):
             LOGGER.info(f'Cloning Done: {name}')
         if is_gdtot:
             gd.deletefile(link)
-         if is_appdrive:
-            gd.deleteFile(link)
+        if is_appdrive:
+            if appdict.get('link_type') == 'login':
+                gd.deleteFile(link)
     else:
         sendMessage('Send Gdrive AppDrive gdtot link along with command or by replying to the link by command', bot, message)
 
