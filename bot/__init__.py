@@ -449,7 +449,8 @@ try:
      APPDRIVE_PASS = getConfig('APPDRIVE_PASS')
   if len(APPDRIVE_PASS) == 0:
      raise KeyError
-except:
+
+ except:
       APPDRIVE_PASS = None
     
  try:
