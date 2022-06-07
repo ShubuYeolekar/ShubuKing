@@ -401,8 +401,7 @@ def gen_payload(data, boundary=f'{"-"*6}_'):
     data_string += f'{boundary}--\r\n'
     return data_string
 
-
-  def appdrive(url: str) -> str:
+def appdrive(url: str) -> str:
     if (APPDRIVE_EMAIL or APPDRIVE_PASS) is None:
         raise DDLExceptionHandler("APPDRIVE_EMAIL and APPDRIVE_PASS env vars not provided")
     client = requests.Session()
