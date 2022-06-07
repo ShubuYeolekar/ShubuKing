@@ -25,9 +25,10 @@ from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 
 fmed_list = ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.com', 'layarkacaxxi.icu',
              'naniplay.nanime.in', 'naniplay.nanime.biz', 'naniplay.com', 'mm9842.com']
-
-
-
+account = {
+    'email': APPDRIVE_EMAIL, 
+    'passwd': APPDRIVE_PASS
+}
 
 def direct_link_generator(link: str):
     """ direct links generator """
@@ -385,12 +386,6 @@ def gdtot(url: str) -> str:
         raise DirectDownloadLinkException("ERROR: Try in your broswer, mostly file not found or user limit exceeded!")
     return f'https://drive.google.com/open?id={decoded_id}'
 
- account = {
-    'email': APPDRIVE_EMAIL,
-    'passwd': APPDRIVE_PASS
-}
- 
- 
 def account_login(client, url, email, password):
     data = {
         'email': email,
