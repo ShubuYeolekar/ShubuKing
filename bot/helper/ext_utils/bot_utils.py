@@ -151,16 +151,22 @@ def get_readable_message():
                 try:
                     msg += f"\n<b>Seeders:</b> {download.aria_download().num_seeders}" \
                            f" | <b>Peers:</b> {download.aria_download().connections}"
+                    msg += f"\n<b>Engine:</b> <code>Aria2c v1.35.0</code>
                 except:
                     pass
                 try:
                     msg += f"\n<b>Seeders:</b> {download.torrent_info().num_seeds}" \
                            f" | <b>Leechers:</b> {download.torrent_info().num_leechs}"
+                    msg += f"\n<b>Engine:</b> <code>qBittorrent v4.4.2</code>"
                 except:
                     pass
+                msg += f"\n<b>Engine:</b> <code>Pyrogram v2.0.1</code>"
+                msg += f"\n<b>Downloaded By:</b> ️<code>{download.message.from_user.first_name}</code>️"
                 msg += f"\n<code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             elif download.status() == MirrorStatus.STATUS_SEEDING:
                 msg += f"\n<b>Size: </b>{download.size()}"
+                msg += f"\n<b>Engine:</b> <code>qBittorrent v4.4.2</code>"
+                msg += f"\n<b>Seeding By:</b> ️<code>{download.message.from_user.first_name}</code>️"
                 msg += f"\n<b>Speed: </b>{get_readable_file_size(download.torrent_info().upspeed)}/s"
                 msg += f" | <b>Uploaded: </b>{get_readable_file_size(download.torrent_info().uploaded)}"
                 msg += f"\n<b>Ratio: </b>{round(download.torrent_info().ratio, 3)}"
